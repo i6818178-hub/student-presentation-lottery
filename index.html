@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학생 발표 순서 뽑기 추첨기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800;900&family=Jua&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+      font-family: 'Pretendard', sans-serif;
+      color: #f8fafc;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+    }
+
+    /* 상단 헤더 */
+    header {
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-badge {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    }
+
+    h1 {
+      font-family: 'Jua', sans-serif;
+      font-size: 2.2rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(180deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    /* 메인 컨테이너 */
+    .main-layout {
+      width: 100%;
+      max-width: 1400px;
+      padding: 0 30px 30px;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 30px;
+      align-items: start;
+      z-index: 5;
+    }
+
+    /* 추첨 머신 구역 */
+    .machine-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 24px 20px 30px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+
+    /* 상태 안내 뱃지 */
+    .status-banner {
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 8px 24px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.98); }
+    }
+
+    /* 머신 프레임 */
+    .machine-wrapper {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 캔버스 (공들이 튕기는 공간) */
+    #machineCanvas {
+      width: 480px;
+      height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.15) 0%, rgba(30, 41, 59, 0.5) 50%, rgba(15, 23, 42, 0.9) 100%);
+      box-shadow: 
+        0 0 60px rgba(99, 102, 241, 0.3),
+        inset 0 0 35px rgba(255, 255, 255, 0.3),
+        inset -15px -15px 40px rgba(0, 0, 0, 0.6);
+      border: 6px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* 유리 광택 오버레이 */
+    .glass-highlight {
+      position: absolute;
+      top: 25px;
+      left: 65px;
+      width: 140px;
+      height: 70px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 80%);
+      border-radius: 50%;
+      transform: rotate(-30deg);
+      pointer-events: none;
+    }
+
+    /* 하단 머신 받침대 */
+    .machine-stand {
+      width: 300px;
+      height: 36px;
+      background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
+      border-radius: 0 0 20px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      margin-top: -8px;
+    }
+
+    /* 추첨 출구 튜브 */
+    .exit-pipe {
+      position: absolute;
+      top: -15px;
+      width: 90px;
+      height: 50px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.1));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      z-index: 2;
+    }
+
+    /* 스페이스 바 조작 버튼 & 안내 */
+    .control-area {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .space-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+      border: none;
+      color: white;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.6rem;
+      padding: 18px 60px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .space-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 14px 40px rgba(139, 92, 246, 0.7);
+    }
+
+    .space-btn:active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+    }
+
+    .space-btn:disabled {
+      background: #475569;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+      opacity: 0.6;
+    }
+
+    .key-badge {
+      background: rgba(255, 255, 255, 0.25);
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .hint-text {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 우측 발표 순서 결과판 */
+    .history-section {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      height: 700px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .history-header h2 {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.5rem;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .count-badge {
+      font-size: 0.9rem;
+      background: #3b82f6;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 4px 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .history-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 16px;
+      border-radius: 14px;
+      transition: all 0.25s ease;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .history-item.latest {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .order-number {
+      background: rgba(255, 255, 255, 0.1);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .ball-preview {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.15rem;
+      color: #fff;
+      font-weight: 800;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 2px 2px 5px rgba(255,255,255,0.6);
+    }
+
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      opacity: 0.6;
+    }
+
+    /* 하단 액션 버튼 */
+    .history-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-action {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-copy:hover {
+      background: rgba(59, 130, 246, 0.35);
+    }
+
+    .btn-reset {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-reset:hover {
+      background: rgba(239, 68, 68, 0.35);
+    }
+
+    /* 대형 당첨 모달 (추출 연출) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lottery-popup {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 36px;
+      padding: 40px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(99, 102, 241, 0.4);
+      transform: scale(0.6);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: center;
+    }
+
+    .modal-overlay.active .lottery-popup {
+      transform: scale(1);
+    }
+
+    .popup-order-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.8rem;
+      color: #38bdf8;
+      letter-spacing: -0.5px;
+    }
+
+    .huge-ball {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Jua', sans-serif;
+      font-size: 5.5rem;
+      color: #ffffff;
+      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.5),
+        inset 10px 10px 25px rgba(255, 255, 255, 0.8),
+        inset -10px -10px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+      animation: bounceBall 0.8s ease infinite alternate;
+    }
+
+    @keyframes bounceBall {
+      from { transform: translateY(0); }
+      to { transform: translateY(-15px); }
+    }
+
+    .popup-sub {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .popup-close-btn {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border: none;
+      color: white;
+      font-family: 'Jua', sans-serif;
+      font-size: 1.25rem;
+      padding: 12px 40px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      transition: transform 0.15s ease;
+    }
+
+    .popup-close-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* 설정 모달 */
+    .settings-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 105;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .settings-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .settings-card {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 30px;
+      width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .settings-card h3 {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.4rem;
+      color: #f8fafc;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .form-input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: #6366f1;
+    }
+
+    /* Confetti Canvas */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* 알림 토스트 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 120;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 폭죽용 캔버스 -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- 상단 헤더 -->
+  <header>
+    <div class="title-box">
+      <span class="title-badge">🎯 교실 발표 순서 정하기</span>
+      <h1>행운의 번호공 뽑기</h1>
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" id="btnSoundToggle" title="효과음 켜기/끄기">
+        <span id="soundIcon">🔊</span> <span id="soundText">소리 켬</span>
+      </button>
+      <button class="btn-icon" id="btnSettings" title="총 인원수 변경">
+        ⚙️ 설정 (인원수)
+      </button>
+      <button class="btn-icon" id="btnFullscreen" title="전체화면 전환">
+        ⛶ 전체화면
+      </button>
+    </div>
+  </header>
+
+  <!-- 메인 레이아웃 -->
+  <div class="main-layout">
+    <!-- 왼쪽: 볼 추첨기 -->
+    <div class="machine-section">
+      <div class="status-banner" id="statusBanner">
+        <span>✨ [스페이스 바]를 누르면 공이 섞이기 시작합니다!</span>
+      </div>
+
+      <div class="machine-wrapper">
+        <div class="exit-pipe"></div>
+        <canvas id="machineCanvas" width="480" height="480"></canvas>
+        <div class="glass-highlight"></div>
+      </div>
+      <div class="machine-stand"></div>
+
+      <!-- 조작부 -->
+      <div class="control-area">
+        <button class="space-btn" id="btnTrigger">
+          <span class="key-badge">Space</span>
+          <span id="btnTriggerText">공 섞기 시작</span>
+        </button>
+        <div class="hint-text">
+          <span>💡 키보드의 <b>스페이스 바(Space)</b>를 누르면 빠르게 조작할 수 있어요!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 발표 순서 리스트 -->
+    <div class="history-section">
+      <div class="history-header">
+        <h2>
+          <span>📋 발표 순서</span>
+          <span class="count-badge" id="drawnCountBadge">0 / 25</span>
+        </h2>
+      </div>
+
+      <div class="history-list" id="historyList">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🎲</div>
+          <p>아직 뽑힌 번호가 없습니다.<br>스페이스 바를 눌러 첫 번째 발표자를 뽑아보세요!</p>
+        </div>
+      </div>
+
+      <div class="history-actions">
+        <button class="btn-action btn-copy" id="btnCopy">
+          📋 순서 복사
+        </button>
+        <button class="btn-action btn-reset" id="btnReset">
+          🔄 전체 초기화
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대형 당첨 모달 -->
+  <div class="modal-overlay" id="resultModal">
+    <div class="lottery-popup">
+      <div class="popup-order-title" id="popupOrderTitle">🎉 제 1 발표자</div>
+      <div class="huge-ball" id="hugeBall">1</div>
+      <div class="popup-sub" id="popupSubText">축하합니다! <b>1번</b> 학생 발표 차례입니다!</div>
+      <button class="popup-close-btn" id="btnConfirmResult">확인 (스페이스 바)</button>
+    </div>
+  </div>
+
+  <!-- 설정 모달 -->
+  <div class="settings-modal" id="settingsModal">
+    <div class="settings-card">
+      <h3>⚙️ 추첨 설정</h3>
+      <div class="form-group">
+        <label for="totalBallsInput">전체 학생 수 (최대 번호)</label>
+        <input type="number" id="totalBallsInput" class="form-input" min="2" max="60" value="25">
+        <small style="color: #64748b; font-size: 0.8rem;">* 2명부터 60명까지 설정 가능합니다.</small>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+        <button class="btn-icon" id="btnCloseSettings">취소</button>
+        <button class="btn-icon" id="btnSaveSettings" style="background: #4f46e5; border-color: #6366f1;">저장 후 새로 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 알림 토스트 -->
+  <div class="toast" id="toastMessage">복사되었습니다!</div>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. 공 색상 팔레트 (다채롭고 생동감 있는 색상)
+    // -------------------------------------------------------------------------
+    const BALL_COLORS = [
+      { bg: '#ef4444', text: '#ffffff' }, // 1 빨강
+      { bg: '#f97316', text: '#ffffff' }, // 2 주황
+      { bg: '#f59e0b', text: '#ffffff' }, // 3 황금
+      { bg: '#eab308', text: '#ffffff' }, // 4 노랑
+      { bg: '#84cc16', text: '#ffffff' }, // 5 라임
+      { bg: '#10b981', text: '#ffffff' }, // 6 에메랄드
+      { bg: '#06b6d4', text: '#ffffff' }, // 7 시안
+      { bg: '#0284c7', text: '#ffffff' }, // 8 라이트블루
+      { bg: '#3b82f6', text: '#ffffff' }, // 9 블루
+      { bg: '#6366f1', text: '#ffffff' }, // 10 인디고
+      { bg: '#8b5cf6', text: '#ffffff' }, // 11 바이올렛
+      { bg: '#a855f7', text: '#ffffff' }, // 12 퍼플
+      { bg: '#d946ef', text: '#ffffff' }, // 13 푸시아
+      { bg: '#ec4899', text: '#ffffff' }, // 14 핑크
+      { bg: '#f43f5e', text: '#ffffff' }, // 15 로즈
+      { bg: '#14b8a6', text: '#ffffff' }, // 16 틸
+      { bg: '#475569', text: '#ffffff' }, // 17 슬레이트
+      { bg: '#d97706', text: '#ffffff' }, // 18 앰버
+      { bg: '#059669', text: '#ffffff' }, // 19 그린
+      { bg: '#2563eb', text: '#ffffff' }, // 20 딥블루
+      { bg: '#7c3aed', text: '#ffffff' }, // 21 딥퍼플
+      { bg: '#db2777', text: '#ffffff' }, // 22 딥핑크
+      { bg: '#e11d48', text: '#ffffff' }, // 23 크림슨
+      { bg: '#0d9488', text: '#ffffff' }, // 24 다크틸
+      { bg: '#ea580c', text: '#ffffff' }  // 25 다크오렌지
+    ];
+
+    function getBallColor(number) {
+      const idx = (number - 1) % BALL_COLORS.length;
+      return BALL_COLORS[idx];
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. Web Audio API 사운드 신디사이저 (외부 오디오 파일 불필요)
+    // -------------------------------------------------------------------------
+    class SoundManager {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+      }
+
+      // 공 튕기는 가벼운 틱 소리
+      playBounce() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(300 + Math.random() * 200, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.05);
+
+          gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.05);
+        } catch (e) {}
+      }
+
+      // 공 섞기 시작 휙~ 소리
+      playSpinStart() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(450, this.ctx.currentTime + 0.4);
+
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.4);
+        } catch (e) {}
+      }
+
+      // 뽑히는 뿅! 소리
+      playExtract() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(750, this.ctx.currentTime + 0.25);
+
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.25);
+        } catch (e) {}
+      }
+
+      // 팡파레 축하 사운드 (도-미-솔-높은도 아르페지오)
+      playFanfare() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = this.ctx.currentTime + (i * 0.1);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.2, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + (i === 3 ? 0.6 : 0.3));
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + (i === 3 ? 0.6 : 0.3));
+          });
+        } catch (e) {}
+      }
+    }
+
+    const soundManager = new SoundManager();
+
+    // -------------------------------------------------------------------------
+    // 3. 물리 엔진 (Canvas Ball Physics)
+    // -------------------------------------------------------------------------
+    class Ball {
+      constructor(number, x, y, radius) {
+        this.number = number;
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.colors = getBallColor(number);
+        this.rotation = Math.random() * Math.PI * 2;
+        this.vRot = (Math.random() - 0.5) * 0.1;
+        this.isBeingExtracted = false;
+        this.extractProgress = 0;
+      }
+
+      update(state, chamberRadius, chamberCenter) {
+        if (this.isBeingExtracted) {
+          // 출구(상단) 쪽으로 빨려 올라가는 애니메이션
+          this.extractProgress += 0.05;
+          this.x += (chamberCenter.x - this.x) * 0.2;
+          this.y += (0 - this.y) * 0.15;
+          this.radius = Math.max(12, this.radius * 0.96);
+          return;
+        }
+
+        // 상태에 따른 속도 부스트
+        let speedMultiplier = 1;
+        let turbulentForce = 0.2;
+
+        if (state === 'SPINNING') {
+          speedMultiplier = 3.8;
+          turbulentForce = 1.2;
+          // 중심 소용돌이 힘 추가
+          const dx = this.x - chamberCenter.x;
+          const dy = this.y - chamberCenter.y;
+          // 접선 방향 가속도 (회전력)
+          this.vx += -dy * 0.015;
+          this.vy += dx * 0.015;
+        } else if (state === 'DECELERATING') {
+          speedMultiplier = 1.5;
+        }
+
+        // 난류 (바람/섞임)
+        this.vx += (Math.random() - 0.5) * turbulentForce;
+        this.vy += (Math.random() - 0.5) * turbulentForce;
+
+        // 중력 살짝 적용
+        this.vy += 0.12;
+
+        // 위치 업데이트
+        this.x += this.vx * speedMultiplier;
+        this.y += this.vy * speedMultiplier;
+        this.rotation += this.vRot * speedMultiplier;
+
+        // 드럼(원형 벽)과의 충돌 검사
+        const dx = this.x - chamberCenter.x;
+        const dy = this.y - chamberCenter.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = chamberRadius - this.radius;
+
+        if (dist > maxDist) {
+          // 원형 벽 밖으로 나갔을 때 튕겨내기
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          // 위치 보정
+          this.x = chamberCenter.x + nx * maxDist;
+          this.y = chamberCenter.y + ny * maxDist;
+
+          // 탄성 반사
+          const dot = this.vx * nx + this.vy * ny;
+          this.vx = (this.vx - 2 * dot * nx) * 0.88;
+          this.vy = (this.vy - 2 * dot * ny) * 0.88;
+
+          // 충돌 효과음 가끔 재생 (소리 과밀 방지)
+          if (Math.random() < 0.08) {
+            soundManager.playBounce();
+          }
+        }
+
+        // 공기 저항 감쇠
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        // 공 그림자
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        const grad = ctx.createRadialGradient(
+          -this.radius * 0.3, -this.radius * 0.3, this.radius * 0.1,
+          0, 0, this.radius
+        );
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.2, this.colors.bg);
+        grad.addColorStop(1, '#000000');
+
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 흰색 번호 배경 원
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 번호 텍스트
+        ctx.fillStyle = '#0f172a';
+        ctx.font = `bold ${Math.round(this.radius * 0.7)}px 'Pretendard', sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.number, 0, 1);
+
+        ctx.restore();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. 게임 상태 및 컨트롤러
+    // -------------------------------------------------------------------------
+    const State = {
+      IDLE: 'IDLE',               // 대기 상태 (스페이스 누르면 회전 시작)
+      SPINNING: 'SPINNING',       // 격렬하게 섞이는 중 (스페이스 누르면 멈춤 & 추출)
+      EXTRACTING: 'EXTRACTING',   // 공 하나가 위로 추출되는 연출
+      SHOW_RESULT: 'SHOW_RESULT', // 대형 팝업 표시 중 (스페이스 누르면 닫힘)
+      ALL_DONE: 'ALL_DONE'        // 모든 공이 소진됨
+    };
+
+    let currentState = State.IDLE;
+    let totalCount = 25;
+    let remainingNumbers = [];
+    let drawnList = []; // [{ order: 1, number: 5 }, ...]
+    let balls = [];
+    let extractingBall = null;
+    let spinTimer = null;
+
+    // 캔버스 엘리먼트
+    const canvas = document.getElementById('machineCanvas');
+    const ctx = canvas.getContext('2d');
+    const chamberCenter = { x: canvas.width / 2, y: canvas.height / 2 };
+    const chamberRadius = canvas.width / 2 - 12;
+
+    // DOM 엘리먼트들
+    const statusBanner = document.getElementById('statusBanner');
+    const btnTrigger = document.getElementById('btnTrigger');
+    const btnTriggerText = document.getElementById('btnTriggerText');
+    const historyList = document.getElementById('historyList');
+    const emptyState = document.getElementById('emptyState');
+    const drawnCountBadge = document.getElementById('drawnCountBadge');
+    const resultModal = document.getElementById('resultModal');
+    const popupOrderTitle = document.getElementById('popupOrderTitle');
+    const hugeBall = document.getElementById('hugeBall');
+    const popupSubText = document.getElementById('popupSubText');
+    const btnConfirmResult = document.getElementById('btnConfirmResult');
+    const btnReset = document.getElementById('btnReset');
+    const btnCopy = document.getElementById('btnCopy');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // 상단 버튼들
+    const btnSoundToggle = document.getElementById('btnSoundToggle');
+    const soundIcon = document.getElementById('soundIcon');
+    const soundText = document.getElementById('soundText');
+    const btnSettings = document.getElementById('btnSettings');
+    const settingsModal = document.getElementById('settingsModal');
+    const totalBallsInput = document.getElementById('totalBallsInput');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+    const btnSaveSettings = document.getElementById('btnSaveSettings');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+
+    // -------------------------------------------------------------------------
+    // 5. 초기화 함수
+    // -------------------------------------------------------------------------
+    function initGame(count = 25) {
+      totalCount = count;
+      remainingNumbers = [];
+      for (let i = 1; i <= totalCount; i++) {
+        remainingNumbers.push(i);
+      }
+      drawnList = [];
+      currentState = State.IDLE;
+      extractingBall = null;
+
+      // 볼 생성
+      createBallsInChamber();
+
+      // UI 리셋
+      updateDrawnHistoryUI();
+      updateStatusUI();
+    }
+
+    function createBallsInChamber() {
+      balls = [];
+      const ballRadius = Math.max(14, Math.min(22, 380 / (Math.sqrt(remainingNumbers.length) * 12)));
+
+      remainingNumbers.forEach(num => {
+        // 챔버 내부 임의의 위치에 배치
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (chamberRadius - ballRadius - 20);
+        const x = chamberCenter.x + Math.cos(angle) * dist;
+        const y = chamberCenter.y + Math.sin(angle) * dist;
+        balls.push(new Ball(num, x, y, ballRadius));
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. 스페이스 바 & 추첨 흐름 제어
+    // -------------------------------------------------------------------------
+    function handleTriggerAction() {
+      soundManager.init();
+
+      if (currentState === State.IDLE) {
+        if (remainingNumbers.length === 0) {
+          showToast('모든 학생이 이미 뽑혔습니다! 전체 초기화를 해주세요.');
+          return;
+        }
+        // 섞기 시작!
+        currentState = State.SPINNING;
+        soundManager.playSpinStart();
+        updateStatusUI();
+      } 
+      else if (currentState === State.SPINNING) {
+        // 멈추고 공 1개 추출!
+        extractWinningBall();
+      } 
+      else if (currentState === State.SHOW_RESULT) {
+        // 결과 모달 닫기
+        closeResultModal();
+      }
+    }
+
+    function extractWinningBall() {
+      currentState = State.EXTRACTING;
+      updateStatusUI();
+
+      // 남은 번호 중 랜덤 1개 선택
+      const randIdx = Math.floor(Math.random() * remainingNumbers.length);
+      const chosenNum = remainingNumbers[randIdx];
+
+      // 공 목록에서 추출 대상 볼 찾기
+      const targetBall = balls.find(b => b.number === chosenNum);
+      if (targetBall) {
+        targetBall.isBeingExtracted = true;
+        extractingBall = targetBall;
+      }
+
+      soundManager.playExtract();
+
+      // 짧은 추출 애니메이션 후 대형 모달 팝업
+      setTimeout(() => {
+        // 데이터 업데이트
+        remainingNumbers.splice(randIdx, 1);
+        balls = balls.filter(b => b.number !== chosenNum);
+
+        const orderNum = drawnList.length + 1;
+        drawnList.push({ order: orderNum, number: chosenNum });
+
+        showWinningModal(orderNum, chosenNum);
+      }, 700);
+    }
+
+    function showWinningModal(order, number) {
+      currentState = State.SHOW_RESULT;
+      soundManager.playFanfare();
+      triggerConfetti();
+
+      popupOrderTitle.textContent = `🎉 제 ${order} 발표자 선정!`;
+      hugeBall.textContent = number;
+      const colors = getBallColor(number);
+      hugeBall.style.background = `radial-gradient(circle at 35% 35%, #ffffff 0%, ${colors.bg} 40%, #000000 100%)`;
+      popupSubText.innerHTML = `축하합니다! <b>${number}번</b> 학생 발표 차례입니다!`;
+
+      resultModal.classList.add('active');
+      updateDrawnHistoryUI();
+      updateStatusUI();
+    }
+
+    function closeResultModal() {
+      resultModal.classList.remove('active');
+      if (remainingNumbers.length === 0) {
+        currentState = State.ALL_DONE;
+      } else {
+        currentState = State.IDLE;
+      }
+      updateStatusUI();
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. UI 업데이트
+    // -------------------------------------------------------------------------
+    function updateStatusUI() {
+      drawnCountBadge.textContent = `${drawnList.length} / ${totalCount}`;
+
+      if (currentState === State.IDLE) {
+        statusBanner.innerHTML = '<span>✨ [스페이스 바]를 누르면 공이 섞이기 시작합니다!</span>';
+        statusBanner.style.color = '#38bdf8';
+        statusBanner.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        btnTrigger.disabled = false;
+        btnTriggerText.textContent = '공 섞기 시작';
+      } else if (currentState === State.SPINNING) {
+        statusBanner.innerHTML = '<span>🌪️ 신나게 섞이는 중! [스페이스 바]를 눌러 공을 뽑으세요!</span>';
+        statusBanner.style.color = '#f59e0b';
+        statusBanner.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+        btnTrigger.disabled = false;
+        btnTriggerText.textContent = '멈추고 공 뽑기!';
+      } else if (currentState === State.EXTRACTING) {
+        statusBanner.innerHTML = '<span>🎯 두구두구... 공이 올라옵니다!</span>';
+        statusBanner.style.color = '#ec4899';
+        btnTrigger.disabled = true;
+        btnTriggerText.textContent = '추출 중...';
+      } else if (currentState === State.SHOW_RESULT) {
+        statusBanner.innerHTML = '<span>🎉 발표자가 결정되었습니다!</span>';
+        btnTrigger.disabled = false;
+        btnTriggerText.textContent = '확인 및 다음으로';
+      } else if (currentState === State.ALL_DONE) {
+        statusBanner.innerHTML = '<span>🎊 모든 학생(1~' + totalCount + '번)의 발표 순서가 완료되었습니다!</span>';
+        statusBanner.style.color = '#10b981';
+        statusBanner.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        btnTrigger.disabled = true;
+        btnTriggerText.textContent = '추첨 완료';
+      }
+    }
+
+    function updateDrawnHistoryUI() {
+      historyList.innerHTML = '';
+
+      if (drawnList.length === 0) {
+        historyList.appendChild(emptyState);
+        return;
+      }
+
+      // 최신 뽑힌 순으로 정렬하거나 순서대로 출력 (최신 항목을 상단에 표시)
+      [...drawnList].reverse().forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = `history-item ${index === 0 ? 'latest' : ''}`;
+
+        const colors = getBallColor(item.number);
+
+        row.innerHTML = `
+          <div class="order-tag">
+            <span class="order-number">${item.order}</span>
+            <span>${item.order}번째 발표자</span>
+          </div>
+          <div class="ball-preview" style="background: radial-gradient(circle at 35% 35%, #fff 0%, ${colors.bg} 50%, #000 100%);">
+            ${item.number}
+          </div>
+        `;
+        historyList.appendChild(row);
+      });
+    }
+
+    function showToast(text) {
+      toastMessage.textContent = text;
+      toastMessage.classList.add('show');
+      setTimeout(() => {
+        toastMessage.classList.remove('show');
+      }, 2200);
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. 캔버스 렌더링 루프
+    // -------------------------------------------------------------------------
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 챔버 내부 격자 또는 바람 이펙트 (SPINNING 중)
+      if (currentState === State.SPINNING) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(chamberCenter.x, chamberCenter.y, chamberRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        // 회전하는 바람 선 그리기
+        const time = Date.now() * 0.005;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(chamberCenter.x, chamberCenter.y, chamberRadius * (0.3 + i * 0.2), time + i, time + i + Math.PI * 0.8);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // 볼 업데이트 및 렌더링
+      balls.forEach(ball => {
+        ball.update(currentState, chamberRadius, chamberCenter);
+        ball.draw(ctx);
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. 폭죽 (Confetti) 파티클 시스템
+    // -------------------------------------------------------------------------
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const cCtx = confettiCanvas.getContext('2d');
+    let confettiParticles = [];
+
+    function resizeConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    function triggerConfetti() {
+      confettiParticles = [];
+      const particleCount = 120;
+      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ffffff'];
+
+      for (let i = 0; i < particleCount; i++) {
+        confettiParticles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: (Math.random() - 0.5) * 18,
+          vy: (Math.random() - 0.5) * 18 - 4,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 15,
+          alpha: 1,
+          gravity: 0.35
+        });
+      }
+    }
+
+    function updateConfetti() {
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+      if (confettiParticles.length > 0) {
+        confettiParticles.forEach((p, index) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.rotation += p.vRot;
+          p.alpha -= 0.012;
+
+          cCtx.save();
+          cCtx.globalAlpha = Math.max(0, p.alpha);
+          cCtx.translate(p.x, p.y);
+          cCtx.rotate((p.rotation * Math.PI) / 180);
+          cCtx.fillStyle = p.color;
+          cCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          cCtx.restore();
+
+          if (p.alpha <= 0) {
+            confettiParticles.splice(index, 1);
+          }
+        });
+      }
+      requestAnimationFrame(updateConfetti);
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. 이벤트 리스너 등록
+    // -------------------------------------------------------------------------
+    // 키보드 스페이스 바
+    window.addEventListener('keydown', (e) => {
+      // 폼 입력 중일 때는 스페이스 바 동작 차단 방지
+      if (e.target.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleTriggerAction();
+      }
+    });
+
+    btnTrigger.addEventListener('click', handleTriggerAction);
+    btnConfirmResult.addEventListener('click', closeResultModal);
+
+    // 순서 텍스트 클립보드 복사
+    btnCopy.addEventListener('click', () => {
+      if (drawnList.length === 0) {
+        showToast('복사할 발표 순서가 없습니다!');
+        return;
+      }
+
+      let text = `[학생 발표 순서 목록]\n`;
+      drawnList.forEach(item => {
+        text += `${item.order}번째 발표: ${item.number}번 학생\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 발표 순서가 클립보드에 복사되었습니다!');
+      }).catch(() => {
+        // 복사 실패 폴백
+        showToast('클립보드 접근 권한이 없어 복사하지 못했습니다.');
+      });
+    });
+
+    // 전체 초기화
+    btnReset.addEventListener('click', () => {
+      if (confirm('발표 순서를 처음부터 다시 뽑으시겠습니까?')) {
+        initGame(totalCount);
+        showToast('🔄 모든 번호가 초기화되었습니다.');
+      }
+    });
+
+    // 사운드 토글
+    btnSoundToggle.addEventListener('click', () => {
+      const isEnabled = soundManager.toggle();
+      if (isEnabled) {
+        soundIcon.textContent = '🔊';
+        soundText.textContent = '소리 켬';
+        showToast('🔊 효과음이 켜졌습니다.');
+      } else {
+        soundIcon.textContent = '🔇';
+        soundText.textContent = '소리 끔';
+        showToast('🔇 효과음이 꺼졌습니다.');
+      }
+    });
+
+    // 설정 모달 (인원수)
+    btnSettings.addEventListener('click', () => {
+      totalBallsInput.value = totalCount;
+      settingsModal.classList.add('active');
+    });
+
+    btnCloseSettings.addEventListener('click', () => {
+      settingsModal.classList.remove('active');
+    });
+
+    btnSaveSettings.addEventListener('click', () => {
+      const val = parseInt(totalBallsInput.value, 10);
+      if (isNaN(val) || val < 2 || val > 60) {
+        alert('학생 수는 2명부터 60명까지 입력해주세요.');
+        return;
+      }
+      settingsModal.classList.remove('active');
+      initGame(val);
+      showToast(`🎯 인원수가 1~${val}번으로 재설정되었습니다.`);
+    });
+
+    // 전체화면 토글
+    btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          showToast('전체화면 모드를 지원하지 않는 환경입니다.');
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    // -------------------------------------------------------------------------
+    // 11. 게임 시작 실행
+    // -------------------------------------------------------------------------
+    initGame(25);
+    animate();
+    updateConfetti();
+  </script>
+</body>
+</html>
